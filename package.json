@@ -1,0 +1,13 @@
+{
+  "name": "ai-sandbox-benchmark",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Standardized benchmarking framework for AI code execution sandbox environments",
+  "license": "Apache-2.0",
+  "type": "commonjs",
+  "dependencies": {
+    "@codesandbox/sdk": "^2.4.2",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1"
+  }
+}

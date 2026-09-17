@@ -8,7 +8,7 @@ import json
 import base64
 from concurrent.futures import ThreadPoolExecutor
 from typing import Dict, Any, List, Union, Tuple, Optional
-from daytona_sdk import Daytona, DaytonaConfig, CreateSandboxParams
+from daytona_sdk import Daytona, DaytonaConfig, CreateSandboxFromImageParams
 from metrics import BenchmarkTimingMetrics
 from providers.utils import extract_imports, check_and_install_dependencies
 
@@ -117,7 +117,7 @@ async def list_workspaces(target_region: str) -> List:
             
             # List workspaces using the persistent executor
             # This triggers the warm pool preparation on Daytona's side
-            workspaces = await loop.run_in_executor(daytona_executor, daytona.list)
+            workspaces = list(await loop.run_in_executor(daytona_executor, daytona.list))
             
             # Add a small delay to avoid API rate limiting
             await asyncio.sleep(API_WAIT_TIME)
@@ -189,7 +189,7 @@ async def execute(
         daytona = await get_or_create_daytona_client(target_region)
         
         # Configure workspace parameters with improved defaults
-        params = CreateSandboxParams(
+        params = CreateSandboxFromImageParams(
             image=image,
             language="python"
         )
@@ -294,7 +294,7 @@ async def execute(
                 async with api_semaphore:
                     log_debug("Acquired API semaphore for workspace cleanup")
                     # Use the same persistent executor for cleanup
-                    await loop.run_in_executor(daytona_executor, daytona.remove, workspace)
+                    await loop.run_in_executor(daytona_executor, daytona.delete, workspace)
                     # No need for a delay after cleanup as it's typically the last operation
                     
                 log_info("Cleanup completed")

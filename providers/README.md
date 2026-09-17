@@ -11,6 +11,8 @@ The benchmark currently supports the following execution environments:
 - **CodeSandbox** - Browser-based sandbox environment (codesandbox.py)
 - **Modal** - Serverless compute platform (modal.py)
 - **Local** - Local machine execution for baseline comparison (local.py)
+- **Morph** - Morph Cloud platform for secure AI code execution (morph.py)
+- **Steel** - Full Linux computers accessed through the Steel API (steel.py)
 
 ## Provider Setup Instructions
 
@@ -21,7 +23,7 @@ The benchmark currently supports the following execution environments:
    Before running benchmarks with CodeSandbox, start the CodeSandbox service:
 
    ```bash
-   cd providers && npm install && node providers/codesandbox-service.js
+   npm install && node providers/codesandbox-service.js
    ```
    This service handles the communication between the benchmark and the CodeSandbox API.
 
@@ -67,6 +69,46 @@ Modal uses CLI-based authentication instead of API keys:
 ### Local Provider
 
 The local provider runs tests directly on your machine without any additional setup, making it useful for establishing baseline performance.
+
+### Morph
+
+Morph requires an API key for accessing their sandbox environment:
+
+1. Create an account at [cloud.morph.so](https://cloud.morph.so)
+2. Get your API key from https://cloud.morph.so/web/api-keys
+3. Add to your `.env` file:
+   ```
+   # Required
+   MORPH_API_KEY=your_morph_api_key
+
+   # Optional configuration (uncomment if needed)
+   # MORPH_BASE_URL=https://cloud.morph.so/api  # Default API URL
+   # MORPH_SSH_HOSTNAME=ssh.cloud.morph.so      # Default SSH hostname
+   # MORPH_SSH_PORT=22                          # Default SSH port
+   ```
+4. Install the Morph Cloud SDK: `pip install morphcloud`
+
+### Steel
+
+Steel provides full Linux computers through an HTTP API (private beta / preview):
+
+1. Activate computer access at [app.steel.dev/computer-access](https://app.steel.dev/computer-access)
+2. Get your API key at [app.steel.dev/settings/api-keys](https://app.steel.dev/settings/api-keys)
+3. Add to your `.env` file:
+   ```
+   STEEL_API_KEY=your_steel_api_key
+
+   # Optional configuration (uncomment if needed)
+   # STEEL_API_BASE=https://api.steel.dev     # Default API URL
+   # STEEL_VCPU=2                             # Machine size (default: 2 vCPU)
+   # STEEL_MEMORY_MIB=2048                    # Machine memory (default: 2048 MiB)
+   # STEEL_EXEC_TIMEOUT_SECONDS=900           # Per-command timeout (default: 900)
+   ```
+
+Note: the default Steel Debian image ships without Python. The provider installs
+`python3` and `pip` with `apt`, then the test packages with `pip`, as part of the
+measured setup time. Each test run creates a fresh computer and deletes it when
+done.
 
 ## Provider Configuration
 

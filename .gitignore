@@ -20,6 +20,11 @@ dist/
 build/
 *.egg-info/
 
+# Node
+node_modules/
+package-lock.json
+
+
 # Local development settings
 .env
 

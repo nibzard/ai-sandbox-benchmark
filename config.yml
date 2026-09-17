@@ -31,3 +31,12 @@ providers:
     # CodeSandbox specific configuration
   modal:
     # Modal specific configuration
+  morph:
+    # Morph specific configuration
+    # sandbox_ttl_seconds: 300  # Time-to-live for sandbox instances (default: 300 seconds)
+  steel:
+    # Steel specific configuration
+    # Steel computers are configured via environment variables:
+    # STEEL_API_KEY - required API key
+    # STEEL_VCPU / STEEL_MEMORY_MIB - optional machine size (default: 2 vCPU, 2048 MiB)
+    # STEEL_EXEC_TIMEOUT_SECONDS - optional per-command timeout (default: 900)

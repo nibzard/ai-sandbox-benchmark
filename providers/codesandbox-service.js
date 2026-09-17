@@ -80,11 +80,13 @@ app.post('/execute', async (req, res) => {
     };
 
     let sandbox = null;
+    let sandboxClient = null;
 
     try {
         const createStart = Date.now();
         log(`[${requestId}] Creating sandbox instance`);
-        sandbox = await sdk.sandbox.create();
+        sandbox = await sdk.sandboxes.create();
+        sandboxClient = await sandbox.connect();
         metrics.workspaceCreation = Date.now() - createStart; // Measure workspace creation time
         log(`[${requestId}] Sandbox created successfully in ${metrics.workspaceCreation}ms`);
 
@@ -102,7 +104,7 @@ app.post('/execute', async (req, res) => {
                 envSetupCode += `os.environ['${key}'] = '${value}';\n`;
             }
             
-            await sandbox.shells.python.run(envSetupCode);
+            await sandboxClient.interpreters.python(envSetupCode);
         }
         
         // Check for dependencies and install them if needed
@@ -203,8 +205,8 @@ installed_packages = check_and_install_dependencies(
 print(f"Installed packages: {installed_packages}")
 `;
 
-        const dependencyResult = await sandbox.shells.python.run(dependencyCheckerCode);
-        log(`[${requestId}] Dependency check output: ${dependencyResult.output}`);
+        const dependencyResult = await sandboxClient.interpreters.python(dependencyCheckerCode);
+        log(`[${requestId}] Dependency check output: ${dependencyResult}`);
         
         // For FFT performance test, ensure packages are properly installed
         if (code.includes("from scipy import fft")) {
@@ -212,8 +214,8 @@ print(f"Installed packages: {installed_packages}")
             const pipInstallCode = `
 pip install --user numpy scipy
 `;
-            const pipResult = await sandbox.shells.python.run(pipInstallCode);
-            log(`[${requestId}] Package installation output: ${pipResult.output}`);
+            const pipResult = await sandboxClient.interpreters.python(pipInstallCode);
+            log(`[${requestId}] Package installation output: ${pipResult}`);
         }
         
         // End setup time measurement
@@ -222,14 +224,15 @@ pip install --user numpy scipy
         
         const execStart = Date.now();
         log(`[${requestId}] Executing code in sandbox`);
-        const result = await sandbox.shells.python.run(code);
+        const result = await sandboxClient.interpreters.python(code);
         metrics.codeExecution = Date.now() - execStart; // Measure code execution time
         log(`[${requestId}] Code execution completed in ${metrics.codeExecution}ms`);
-        log(`[${requestId}] Execution output: ${JSON.stringify(result.output)}`);
+        log(`[${requestId}] Execution output: ${JSON.stringify(result)}`);
 
         const cleanupStart = Date.now();
         log(`[${requestId}] Starting sandbox cleanup`);
-        await sandbox.hibernate();
+        await sandboxClient.disconnect();
+        await sdk.sandboxes.hibernate(sandbox.id);
         metrics.cleanup = Date.now() - cleanupStart; // Measure cleanup time
         log(`[${requestId}] Cleanup completed in ${metrics.cleanup}ms`);
 
@@ -238,7 +241,7 @@ pip install --user numpy scipy
 
         res.json({
             requestId,
-            output: result.output,
+            output: result,
             metrics: metrics,
             totalTime
         });
@@ -252,7 +255,10 @@ pip install --user numpy scipy
             try {
                 log(`[${requestId}] Attempting cleanup after error`);
                 const cleanupStart = Date.now();
-                await sandbox.hibernate();
+                if (sandboxClient) {
+                    await sandboxClient.disconnect().catch(() => {});
+                }
+                await sdk.sandboxes.hibernate(sandbox.id);
                 metrics.cleanup = Date.now() - cleanupStart; // Measure cleanup time even in error case
                 log(`[${requestId}] Cleanup after error successful in ${metrics.cleanup}ms`);
             } catch (cleanupError) {
