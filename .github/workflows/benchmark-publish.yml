@@ -1,0 +1,78 @@
+# Publishes benchmark results as committed JSON files.
+#
+# Manual runs only for now: add provider secrets (repo Settings > Secrets and
+# variables > Actions) and uncomment the schedule below to publish on a cadence.
+# Each dispatch runs the comparator once, so scheduled runs spend provider
+# credits every time they fire. The codesandbox provider needs a local Node
+# service (providers/codesandbox-service.js) and cannot run in this job.
+name: Benchmark publish
+
+on:
+  workflow_dispatch:
+    inputs:
+      providers:
+        description: "Comma-separated providers to test"
+        required: true
+        default: "local"
+      tests:
+        description: "Test ids, or 'all'"
+        required: true
+        default: "all"
+      runs:
+        description: "Measurement runs per test"
+        required: true
+        default: "5"
+  # schedule:
+  #   - cron: "23 6 * * 1"  # weekly, Mondays
+
+permissions:
+  contents: write
+
+jobs:
+  benchmark:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run benchmark
+        env:
+          DAYTONA_API_KEY: ${{ secrets.DAYTONA_API_KEY || '' }}
+          DAYTONA_SERVER_URL: ${{ secrets.DAYTONA_SERVER_URL || '' }}
+          E2B_API_KEY: ${{ secrets.E2B_API_KEY || '' }}
+          MODAL_TOKEN_ID: ${{ secrets.MODAL_TOKEN_ID || '' }}
+          MODAL_TOKEN_SECRET: ${{ secrets.MODAL_TOKEN_SECRET || '' }}
+          MORPH_API_KEY: ${{ secrets.MORPH_API_KEY || '' }}
+          STEEL_API_KEY: ${{ secrets.STEEL_API_KEY || '' }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY || '' }}
+        run: |
+          python comparator.py \
+            --tests "${{ inputs.tests }}" \
+            --providers "${{ inputs.providers }}" \
+            --runs "${{ inputs.runs }}" \
+            --warmup-runs 1 \
+            --history-file benchmark_history.json
+
+      - name: Export run records
+        run: python export_results.py --history-file benchmark_history.json --out-dir results --limit 1
+
+      - name: Commit results
+        run: |
+          git config user.name "benchmark-bot"
+          git config user.email "actions@github.com"
+          git add results/
+          if git diff --cached --quiet; then
+            echo "Nothing to commit"
+          else
+            git commit -m "bench: publish results for ${{ inputs.providers }}"
+            git pull --rebase origin ${{ github.ref_name }}
+            git push origin HEAD:${{ github.ref_name }}
+          fi

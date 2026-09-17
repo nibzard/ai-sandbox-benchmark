@@ -4,11 +4,26 @@ This directory contains benchmark tests for evaluating sandbox environments. The
 
 ## Test Structure
 
-Each test follows a standard structure:
+Each test module follows a standard structure:
 
-1. A function named `test_*` that returns a dictionary with:
-   - `config`: Test configuration (environment variables, single run flag, etc.)
+1. A module-level `TEST_META` dict that declares the test's orchestration metadata:
+
+   ```python
+   TEST_META = {
+       "slug": "calculate_primes",       # Unique, stable id; results key is test_<slug>
+       "description": "Calculates the first 10 prime numbers",
+       "single_run": False,              # True: run once per session, ignoring --runs
+       "info_test": False,               # True: information report, not a timing table
+   }
+   ```
+
+2. A function named `test_*` that returns a dictionary with:
+   - `config`: Runtime payload configuration (environment variables, packages)
    - `code`: The actual code to run in the sandbox
+
+The comparator discovers test modules in sorted filename order, so test ids stay stable across runs and machines. Slugs must be unique; the loader fails fast on duplicates. The harness never calls the test function to read metadata.
+
+See `test_template.py` for a complete example.
 
 ## Utility Modules
 
@@ -19,8 +34,7 @@ Contains utilities for test creation and configuration:
 - `benchmark_timer`: Decorator for timing function execution
 - `ensure_packages`: Function to install required packages
 - `print_benchmark_results`: Function to print benchmark results in a standardized format
-- `create_test_config`: Function to create a standardized test configuration
-- `wrap_test`: Decorator for wrapping test functions with standard configuration
+- `create_test_config`: Function to create a standardized runtime payload configuration
 
 ### `test_sandbox_utils.py`
 

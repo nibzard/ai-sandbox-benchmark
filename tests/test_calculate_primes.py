@@ -7,6 +7,14 @@ which is CPU-bound and doesn't require any external dependencies.
 from tests.test_utils import create_test_config
 from tests.test_sandbox_utils import get_sandbox_utils
 
+TEST_META = {
+    "slug": "calculate_primes",
+    "description": "Test that calculates prime numbers to benchmark basic computation performance.",
+    "single_run": False,
+    "info_test": False,
+}
+
+
 def test_calculate_primes():
     """
     Test that calculates prime numbers to benchmark basic computation performance.
@@ -17,7 +25,6 @@ def test_calculate_primes():
     # Define test configuration
     config = create_test_config(
         env_vars=[],  # No env vars needed
-        single_run=False,  # Can run multiple times
     )
 
     # Get the sandbox utilities code

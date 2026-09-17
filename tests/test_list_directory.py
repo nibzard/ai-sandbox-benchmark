@@ -7,6 +7,14 @@ and to verify access to basic filesystem operations.
 from tests.test_utils import create_test_config
 from tests.test_sandbox_utils import get_sandbox_utils
 
+TEST_META = {
+    "slug": "list_directory",
+    "description": "Test that lists directory contents using the bash ls command.",
+    "single_run": False,
+    "info_test": False,
+}
+
+
 def test_list_directory():
     """
     List directory contents using bash ls command instead of Python.
@@ -17,7 +25,6 @@ def test_list_directory():
     # Define test configuration
     config = create_test_config(
         env_vars=[],  # No env vars needed
-        single_run=False,  # Can run multiple times
     )
     
     # Get the sandbox utilities code

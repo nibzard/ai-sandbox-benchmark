@@ -1,3 +1,5 @@
+# ABOUTME: Shared utilities for sandbox test payloads: timing, package install, result format.
+# ABOUTME: These helpers run inside the sandboxed code, not in the benchmark harness.
 import time
 import json
 import sys
@@ -5,7 +7,7 @@ import subprocess
 import os
 import site
 from importlib import invalidate_caches
-from typing import Dict, Any, List, Callable, Optional, Union
+from typing import Dict, Any, List, Optional, Union
 
 def benchmark_timer(func):
     """
@@ -102,68 +104,26 @@ def print_benchmark_results(test_result: Dict[str, Any], additional_metrics: Opt
 
 def create_test_config(
     env_vars: List[str] = None,
-    single_run: bool = False,
     packages: List[str] = None,
-    is_info_test: bool = False
 ) -> Dict[str, Any]:
     """
-    Creates a standardized test configuration dictionary.
+    Creates a standardized runtime payload configuration dictionary.
+
+    Orchestration flags (single_run, info_test) belong in the module-level
+    TEST_META declaration, not in this config.
 
     Args:
         env_vars: List of environment variables needed by the test
-        single_run: Whether the test should only be run once
         packages: List of packages required by the test
-        is_info_test: Whether this is an informational test rather than a performance test
 
     Returns:
         A dictionary containing the test configuration
     """
     config = {
         "env_vars": env_vars or [],
-        "single_run": single_run,
     }
 
     if packages:
         config["packages"] = packages
 
     return config
-
-# Note: Not a test - this is a utility function
-def wrap_test(
-    test_func: Callable,
-    config: Dict[str, Any] = None,
-    is_info_test: bool = False
-) -> Callable:
-    """
-    Wraps a test function to provide standard configuration.
-
-    Args:
-        test_func: The test function to wrap
-        config: Optional configuration dictionary
-        is_info_test: Whether this is an informational test
-
-    Returns:
-        A wrapped test function that returns the proper format
-    """
-    def wrapper():
-        # Set attributes on the function
-        if is_info_test:
-            test_func.is_info_test = True
-
-        # Use provided config or create default
-        test_config = config or create_test_config()
-
-        # Get the test code
-        code = test_func()
-
-        # Return in the standard format
-        return {
-            "config": test_config,
-            "code": code
-        }
-
-    # Copy attributes from the original function
-    wrapper.__name__ = test_func.__name__
-    wrapper.__doc__ = test_func.__doc__
-
-    return wrapper

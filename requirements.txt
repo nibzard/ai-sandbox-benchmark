@@ -8,10 +8,10 @@ certifi==2024.12.14
 charset-normalizer==3.4.0
 click==8.1.8
 dataclasses-json==0.6.7
-daytona_sdk
+daytona_sdk==0.214.0
 distro==1.9.0
-e2b==1.0.5
-e2b-code-interpreter==1.0.3
+e2b==2.50.0
+e2b-code-interpreter==2.10.0
 environs==9.5.0
 fastapi>=0.116.0
 frozenlist==1.5.0
@@ -27,6 +27,7 @@ idna==3.10
 jiter==0.8.2
 jsonpatch==1.33
 jsonpointer==3.0.0
+jsonschema>=4.23.0
 langchain>=1.0.7
 langchain-community>=0.4.0
 langchain-core>=1.0.7
@@ -36,7 +37,8 @@ langsmith>=0.6.0
 markdown-it-py==3.0.0
 marshmallow>=3.23.3
 mdurl==0.1.2
-modal==0.73.92
+modal==1.5.5
+morphcloud==0.1.115
 multidict==6.1.0
 mypy-extensions==1.0.0
 numpy==2.2.1

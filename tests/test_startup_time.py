@@ -7,6 +7,14 @@ conditions, including with standard libraries and popular packages.
 from tests.test_utils import create_test_config
 from tests.test_sandbox_utils import get_sandbox_utils
 
+TEST_META = {
+    "slug": "startup_time",
+    "description": "Test that measures Python startup time for various import scenarios.",
+    "single_run": True,
+    "info_test": True,
+}
+
+
 def test_startup_time():
     """
     Measures Python startup time for various import scenarios.
@@ -22,8 +30,6 @@ def test_startup_time():
     # Define test configuration
     config = create_test_config(
         env_vars=[],  # No env vars needed
-        single_run=True,  # Only run once per benchmark session
-        is_info_test=True  # This is more of an informational test
     )
     
     # Get the sandbox utilities code

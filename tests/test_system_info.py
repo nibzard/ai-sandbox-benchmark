@@ -7,6 +7,14 @@ Python version, CPU, memory, disk space, and environment variables.
 from tests.test_utils import create_test_config
 from tests.test_sandbox_utils import get_sandbox_utils
 
+TEST_META = {
+    "slug": "system_info",
+    "description": "Gather and report essential system information about the sandbox environment.",
+    "single_run": True,
+    "info_test": True,
+}
+
+
 def test_system_info():
     """
     Gather and report essential system information about the sandbox environment.
@@ -22,9 +30,7 @@ def test_system_info():
     # Define test configuration
     config = create_test_config(
         env_vars=[],  # No env vars needed
-        single_run=True,  # Only need to run once per benchmark session
         packages=["psutil"],  # Try to use psutil if available
-        is_info_test=True  # This is an information test, not a performance test
     )
 
     # Get the sandbox utilities code - we only need package installation

@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# ABOUTME: Command-line benchmark runner that executes tests across sandbox providers.
+# ABOUTME: Prints percentile-based performance comparison tables and stores run history.
 import asyncio
 import os
 import time
@@ -22,17 +24,63 @@ from metrics import EnhancedTimingMetrics, BenchmarkHistory
 TESTS_DIR = 'tests'
 defined_tests = {}
 test_id = 1
-for filename in os.listdir(TESTS_DIR):
+
+DEFAULT_TEST_META = {
+    "slug": None,
+    "description": "",
+    "single_run": False,
+    "info_test": False,
+}
+
+
+def resolve_test_meta(test_func: Callable) -> Dict[str, Any]:
+    """Return the declarative metadata for a test function.
+
+    Tests declare a module-level TEST_META dict; the loader attaches it to the
+    test function as `.meta`. Without one, the slug derives from the function
+    name. This never calls the payload builder.
+    """
+    meta = dict(DEFAULT_TEST_META)
+    provided = getattr(test_func, "meta", None)
+    if provided:
+        meta.update(provided)
+    if not meta["slug"]:
+        name = test_func.__name__
+        meta["slug"] = name[len('test_'):] if name.startswith('test_') else name
+    return meta
+
+
+def is_single_run_test(test_func: Callable) -> bool:
+    return resolve_test_meta(test_func)["single_run"] is True
+
+
+def test_key(test_func: Callable) -> str:
+    """Stable history and results key for a test function."""
+    return f"test_{resolve_test_meta(test_func)['slug']}"
+
+
+# Files are processed in sorted order so test ids stay stable across runs and
+# machines. Each module may declare TEST_META with a unique slug.
+_seen_slugs = set()
+for filename in sorted(os.listdir(TESTS_DIR)):
     if filename.endswith('.py') and not filename.startswith('__') and filename != 'test_template.py':
         module_name = filename[:-3]
         module = importlib.import_module(f'{TESTS_DIR}.{module_name}')
+        module_meta = getattr(module, 'TEST_META', None)
+        if module_meta is not None and not isinstance(module_meta, dict):
+            raise ValueError(f"TEST_META in {module_name} must be a dict")
         for name, func in inspect.getmembers(module, inspect.isfunction):
             if name.startswith('test_'):
+                func.meta = dict(module_meta) if module_meta is not None else {}
+                slug = resolve_test_meta(func)["slug"]
+                if slug in _seen_slugs:
+                    raise ValueError(f"Duplicate test slug '{slug}' in {module_name}")
+                _seen_slugs.add(slug)
                 defined_tests[test_id] = func
                 test_id += 1
 
 # Import providers from separate modules
-from providers import daytona, e2b, codesandbox, modal, local
+from providers import daytona, e2b, codesandbox, modal, local, morph, steel
 
 # Map provider names to their corresponding execute() implementations.
 # Note: the daytona.execute() requires (code, executor, target_region).
@@ -41,7 +89,9 @@ provider_executors = {
     'e2b': e2b.execute,
     'codesandbox': codesandbox.execute,
     'modal': modal.execute,
-    'local': local.execute
+    'local': local.execute,
+    'morph': morph.execute,
+    'steel': steel.execute
 }
 
 # Configure logging
@@ -141,7 +191,13 @@ class SandboxExecutor:
             },
             'e2b': {},
             'modal': {},
-            'local': {}
+            'local': {},
+            'morph': {
+                "MORPH_API_KEY": "Morph API key",
+            },
+            'steel': {
+                "STEEL_API_KEY": "Steel API key",
+            }
         }
 
         # Determine which required vars to check based on selected providers
@@ -298,22 +354,12 @@ class SandboxExecutor:
         daytona_test_results = {}
         non_daytona_providers = [p for p in providers if p != 'daytona']
 
-        # Determine which tests should run only once based on their configuration
+        # Determine which tests should run only once based on their declarative metadata
         single_run_tests = {}
         for test_id, test_func in tests.items():
-            # Check for both new configuration format and old attribute-based format
-            try:
-                test_data = test_func()
-                if isinstance(test_data, dict) and 'config' in test_data:
-                    if test_data['config'].get('single_run', False):
-                        single_run_tests[test_id] = test_func
-                        log_benchmark(f"Test {test_id} will run only once (from config)")
-                elif hasattr(test_func, 'single_run') and test_func.single_run:
-                    # Legacy attribute-based configuration
-                    single_run_tests[test_id] = test_func
-                    log_benchmark(f"Test {test_id} will run only once (from attribute)")
-            except Exception as e:
-                log_benchmark(f"Error checking test configuration for test {test_id}: {e}")
+            if is_single_run_test(test_func):
+                single_run_tests[test_id] = test_func
+                log_benchmark(f"Test {test_id} will run only once (from TEST_META)")
 
         # Define multi-run tests as all tests not in single_run_tests
         multi_run_tests = {test_id: func for test_id, func in tests.items()
@@ -389,7 +435,7 @@ class SandboxExecutor:
 
                 # Process results and add them to overall results
                 for provider, test_id, run_num, result in daytona_results:
-                    test_results = overall_results.setdefault(f"test_{test_id}", {})
+                    test_results = overall_results.setdefault(test_key(tests[test_id]), {})
                     run_results = test_results.setdefault(f"run_{run_num}", {})
 
                     if isinstance(result, Exception):
@@ -508,7 +554,7 @@ class SandboxExecutor:
                 provider = meta['provider']
 
                 # Initialize results structure
-                test_results = overall_results.setdefault(f"test_{test_id}", {})
+                test_results = overall_results.setdefault(test_key(tests[test_id]), {})
                 run_results = test_results.setdefault(f"run_{run_num}", {})
 
                 # Process the result
@@ -574,7 +620,9 @@ class ResultsVisualizer:
             print(f"\n{colored(f'Historical Trend for Test {test_id}: {test_func.__name__}', 'blue', attrs=['bold'])}")
 
             # Get provider comparison
-            comparison = history.get_provider_comparison(test_id, providers, runs=limit)
+            comparison = history.get_provider_comparison(
+                resolve_test_meta(test_func)["slug"], providers, runs=limit
+            )
 
             if "error" in comparison:
                 print(f"  {comparison['error']}")
@@ -582,12 +630,14 @@ class ResultsVisualizer:
 
             # Print comparison table
             if comparison["providers"]:
-                headers = ["Provider", "Avg Time (ms)", "Std Dev", "CV (%)", "Error Rate (%)", "Samples"]
+                headers = ["Provider", "Median (ms)", "p95 (ms)", "Mean (ms)", "Std Dev", "CV (%)", "Error Rate (%)", "Samples"]
                 table_data = []
 
                 for provider, stats in comparison["providers"].items():
                     row = [
                         provider.capitalize(),
+                        f"{stats['median_time']:.2f}",
+                        f"{stats['p95_time']:.2f}",
                         f"{stats['avg_time']:.2f}",
                         f"{stats['stdev']:.2f}",
                         f"{stats['cv']:.2f}",
@@ -610,7 +660,9 @@ class ResultsVisualizer:
             for provider in providers:
                 for metric in metrics:
                     metric_name = "Total Time" if metric == "total_time" else metric
-                    trend_data = history.get_trend_data(test_id, provider, metric, limit)
+                    trend_data = history.get_trend_data(
+                        resolve_test_meta(test_func)["slug"], provider, metric, limit
+                    )
 
                     if "error" in trend_data:
                         continue  # Skip if no data for this provider and metric
@@ -655,10 +707,10 @@ class ResultsVisualizer:
 
         # Iterate over each test.
         for test_id, test_code_func in tests.items():
-            test_results = overall_results.get(f"test_{test_id}", {})
+            test_results = overall_results.get(test_key(test_code_func), {})
 
             # Check if test is an info test (like system_info) or a performance test
-            is_info_test = hasattr(test_code_func, 'is_info_test') and test_code_func.is_info_test
+            is_info_test = resolve_test_meta(test_code_func)["info_test"]
 
             # Different header depending on test type
             if is_info_test:
@@ -767,17 +819,15 @@ class ResultsVisualizer:
                 for metric in ["Workspace Creation", "Code Execution", "Cleanup"]:
                     row = [metric]
                     for provider in providers:
-                        all_runs_metrics = []
+                        samples = []
                         for run_num in range(1, measurement_runs + 1):
                             run_results = test_results.get(f"run_{run_num}", {})
                             if provider in run_results:
-                                run_metric = run_results[provider]['metrics'].get_statistics().get(metric, {})
-                                if run_metric:
-                                    all_runs_metrics.append(run_metric['mean'])
-                        if all_runs_metrics:
-                            avg_metric = np.mean(all_runs_metrics)
-                            std_metric = np.std(all_runs_metrics)
-                            row.append(f"{avg_metric:.2f}ms (±{std_metric:.2f})")
+                                samples.extend(run_results[provider]['metrics'].metrics.get(metric, []))
+                        if samples:
+                            median = np.median(samples)
+                            p95 = np.percentile(samples, 95)
+                            row.append(f"{median:.2f}ms (p95: {p95:.2f})")
                         else:
                             row.append("N/A")
                     table_data.append(row)
@@ -792,9 +842,9 @@ class ResultsVisualizer:
                         if provider in run_results:
                             total_times.append(run_results[provider]['metrics'].get_total_time())
                     if total_times:
-                        provider_total = np.mean(total_times)
+                        provider_total = np.median(total_times)
                         platform_totals[provider] = provider_total
-                        row.append(f"{provider_total:.2f}ms")
+                        row.append(f"{provider_total:.2f}ms (p95: {np.percentile(total_times, 95):.2f})")
                     else:
                         row.append("N/A")
                 table_data.append(row)

@@ -1,14 +1,22 @@
 """
 Template for creating new benchmark tests.
 
-This template demonstrates how to create a new test using the test_utils module.
+Copy this file, rename it to test_<your_name>.py, and adjust TEST_META and the
+test code. The comparator discovers every test_<your_name>.py module in this
+directory that defines a test_ function.
 """
-from tests.test_utils import (
-    benchmark_timer,
-    ensure_packages,
-    print_benchmark_results,
-    create_test_config
-)
+from tests.test_utils import create_test_config
+
+# Declarative test contract: the harness reads this instead of calling the test
+# function to learn how to orchestrate the test. "slug" must be unique and
+# stable; it becomes the history and results key (test_<slug>).
+TEST_META = {
+    "slug": "template",
+    "description": "Template for new benchmark tests",
+    "single_run": False,  # True: run once per benchmark session, ignoring --runs
+    "info_test": False,   # True: render as an information report, not a timing table
+}
+
 
 def test_template():
     """
@@ -16,40 +24,29 @@ def test_template():
 
     This is a docstring that should describe what the test does and what it measures.
     """
-    # Define test configuration
+    # Runtime payload configuration: environment variables and packages the
+    # sandboxed code needs. Orchestration flags live in TEST_META, not here.
     config = create_test_config(
         env_vars=[],  # List any environment variables needed
-        single_run=False,  # Set to True if test should only run once per benchmark
         packages=["numpy"],  # List required packages
-        is_info_test=False  # Set to True for informational tests (not performance)
     )
 
     # Return the test configuration and code
     return {
         "config": config,
         "code": """
-# Import the test utilities directly in the code that will run in the sandbox
 import time
 import json
 
 # Standardized timing decorator
 def benchmark_timer(func):
     def wrapper(*args, **kwargs):
-        # Start timer
-        start_time = time.time()
-
-        # Run the function
+        start = time.time()
         result = func(*args, **kwargs)
-
-        # Calculate execution time
-        execution_time = time.time() - start_time
-
-        # Return both the result and the timing
         return {
             "result": result,
-            "execution_time_ms": execution_time * 1000  # Convert to milliseconds
+            "execution_time_ms": (time.time() - start) * 1000
         }
-
     return wrapper
 
 # Install any required packages
@@ -63,19 +60,14 @@ except ImportError:
     subprocess.check_call([sys.executable, "-m", "pip", "install", "numpy"])
     import numpy as np
 
-# Define the benchmark function
 @benchmark_timer
 def run_benchmark():
-    # Create a large array and perform operations
     arr = np.random.random((1000, 1000))
     for _ in range(10):
         np.dot(arr, arr.T)
     return "Benchmark completed successfully"
 
-# Execute the benchmark
 test_result = run_benchmark()
-
-# Print the standard output
 print(test_result["result"])
 print(f'Execution Time: {test_result["execution_time_ms"] / 1000:.2f}s')
 

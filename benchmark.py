@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# ABOUTME: Interactive terminal UI for selecting and running sandbox benchmark tests.
+# ABOUTME: Renders percentile-based performance results in a curses interface.
 """
 AI Sandbox Benchmark - Terminal User Interface
 
@@ -15,7 +17,7 @@ import time
 from typing import List, Dict, Any, Optional, Tuple
 
 import comparator
-from comparator import SandboxExecutor, ResultsVisualizer, defined_tests
+from comparator import SandboxExecutor, ResultsVisualizer, defined_tests, test_key
 import numpy as np
 
 def run_plain_benchmark(test_ids, providers, runs, warmup_runs, region):
@@ -113,7 +115,7 @@ class BenchmarkTUI:
         self.region = "eu"
 
         # Available providers and tests
-        self.providers = ["daytona", "e2b", "codesandbox", "modal", "local"]
+        self.providers = ["daytona", "e2b", "codesandbox", "modal", "local", "steel"]
         self.selected_providers = ["daytona"]  # Select all by default
         self.selected_tests = [1]  # Start with just the first test selected
 
@@ -843,7 +845,7 @@ class BenchmarkTUI:
                                       curses.A_BOLD))
             self.results_content.append(("", curses.A_NORMAL))
 
-            test_results = results.get(f"test_{test_id}", {})
+            test_results = results.get(test_key(test_code_func), {})
 
             # # Get example output
             # first_run_results = test_results.get("run_1", {})
@@ -868,7 +870,7 @@ class BenchmarkTUI:
             # Headers
             header_line = f"{'Metric':<20}"
             for provider in self.selected_providers:
-                header_line += f"{provider:<15}"
+                header_line += f"{provider:<21}"
             self.results_content.append((header_line, curses.A_BOLD))
             self.results_content.append(("-" * len(header_line), curses.A_NORMAL))
 
@@ -885,22 +887,22 @@ class BenchmarkTUI:
                             if provider in run_results:
                                 total_times.append(run_results[provider]['metrics'].get_total_time())
                         if total_times:
-                            value = f"{np.mean(total_times):.2f}"
+                            median = np.median(total_times)
+                            p95 = np.percentile(total_times, 95)
+                            value = f"{median:.2f} p95:{p95:.2f}"
                     else:
-                        # Calculate metrics for standard metrics
-                        all_runs_metrics = []
+                        # Pool raw samples for the metric across all runs
+                        samples = []
                         for run_num in range(1, self.runs + 1):
                             run_results = test_results.get(f"run_{run_num}", {})
                             if provider in run_results:
-                                run_metric = run_results[provider]['metrics'].get_statistics().get(metric, {})
-                                if run_metric:
-                                    all_runs_metrics.append(run_metric['mean'])
-                        if all_runs_metrics:
-                            avg_metric = np.mean(all_runs_metrics)
-                            std_metric = np.std(all_runs_metrics)
-                            value = f"{avg_metric:.2f}±{std_metric:.2f}"
+                                samples.extend(run_results[provider]['metrics'].metrics.get(metric, []))
+                        if samples:
+                            median = np.median(samples)
+                            p95 = np.percentile(samples, 95)
+                            value = f"{median:.2f} p95:{p95:.2f}"
 
-                    metric_line += f"{value:<15}"
+                    metric_line += f"{value:<21}"
 
                 # Color the metric line based on the metric type
                 attr = curses.A_NORMAL

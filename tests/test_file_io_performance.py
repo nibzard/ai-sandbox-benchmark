@@ -7,6 +7,14 @@ read and write speeds for binary, JSON, and CSV files of different sizes.
 from tests.test_utils import create_test_config
 from tests.test_sandbox_utils import get_sandbox_utils
 
+TEST_META = {
+    "slug": "file_io_performance",
+    "description": "Test that measures file I/O performance by reading and writing various file types.",
+    "single_run": True,
+    "info_test": False,
+}
+
+
 def test_file_io_performance():
     """
     Measures file I/O performance by reading and writing various file types.
@@ -20,7 +28,6 @@ def test_file_io_performance():
     # Define test configuration
     config = create_test_config(
         env_vars=[],  # No env vars needed
-        single_run=True,  # Only need to run once per benchmark session
     )
     
     # Get the sandbox utilities code

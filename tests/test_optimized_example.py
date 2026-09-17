@@ -6,6 +6,14 @@ This test demonstrates how to use the sandbox_utils module to reduce code duplic
 from tests.test_utils import create_test_config
 from tests.test_sandbox_utils import get_sandbox_utils
 
+TEST_META = {
+    "slug": "optimized_example",
+    "description": "Example of an optimized test using the sandbox utilities.",
+    "single_run": False,
+    "info_test": False,
+}
+
+
 def test_optimized_example():
     """
     Example test that demonstrates the optimized test structure.
@@ -14,8 +22,7 @@ def test_optimized_example():
     """
     # Define test configuration
     config = create_test_config(
-        packages=["numpy"],
-        single_run=False
+        packages=["numpy"]
     )
 
     # Get the sandbox utilities code

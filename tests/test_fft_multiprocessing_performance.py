@@ -1,9 +1,15 @@
+TEST_META = {
+    "slug": "fft_multiprocessing_performance",
+    "description": "Tests FFT performance using multiprocessing for parallel computation.",
+    "single_run": False,
+    "info_test": False,
+}
+
+
 def test_fft_multiprocessing_performance():
-    """Tests FFT performance using multiprocessing for parallel computation."""
     # Test configuration
     config = {
         "env_vars": [],  # No env vars needed
-        "single_run": False,  # Can run multiple times
         "packages": ["numpy", "scipy", "psutil"]  # Required packages
     }
 

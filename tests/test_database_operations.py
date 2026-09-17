@@ -7,6 +7,14 @@ data insertion, querying, transactions, and concurrent access.
 from tests.test_utils import create_test_config
 from tests.test_sandbox_utils import get_sandbox_utils
 
+TEST_META = {
+    "slug": "database_operations",
+    "description": "Test that measures SQLite database performance in the sandbox environment.",
+    "single_run": True,
+    "info_test": False,
+}
+
+
 def test_database_operations():
     """
     Measures SQLite database operations performance.
@@ -22,7 +30,6 @@ def test_database_operations():
     # Define test configuration
     config = create_test_config(
         env_vars=[],  # No env vars needed
-        single_run=True,  # Only need to run once per benchmark session
     )
     
     # Get the sandbox utilities code

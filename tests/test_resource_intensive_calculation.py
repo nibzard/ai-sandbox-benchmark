@@ -7,6 +7,14 @@ to measure how the sandbox environment handles high resource utilization.
 from tests.test_utils import create_test_config
 from tests.test_sandbox_utils import get_sandbox_utils
 
+TEST_META = {
+    "slug": "resource_intensive_calculation",
+    "description": "Test that performs resource-intensive calculations to stress test the sandbox.",
+    "single_run": False,
+    "info_test": False,
+}
+
+
 def test_resource_intensive_calculation():
     """
     Performs resource-intensive calculations to stress test the sandbox.
@@ -21,7 +29,6 @@ def test_resource_intensive_calculation():
     # Define test configuration
     config = create_test_config(
         env_vars=[],  # No env vars needed
-        single_run=False,  # Can run multiple times
     )
     
     # Get the sandbox utilities code

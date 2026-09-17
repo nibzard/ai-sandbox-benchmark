@@ -1,10 +1,14 @@
 #!/usr/bin/env python3
+# ABOUTME: Timing metrics collection and statistical analysis for benchmark runs.
+# ABOUTME: Also manages the benchmark history file with schema-validated run records.
 import numpy as np
 import json
 import os
 import uuid
 from datetime import datetime
-from typing import Dict, List, Optional, Any
+from typing import Dict, List, Optional, Any, Union
+
+from result_schema import SCHEMA_VERSION, validate_run_record
 
 class EnhancedTimingMetrics:
     def __init__(self):
@@ -41,7 +45,11 @@ class EnhancedTimingMetrics:
                     'mean': np.mean(measurements),
                     'std': np.std(measurements),
                     'min': np.min(measurements),
-                    'max': np.max(measurements)
+                    'max': np.max(measurements),
+                    'median': float(np.percentile(measurements, 50)),
+                    'p95': float(np.percentile(measurements, 95)),
+                    'p99': float(np.percentile(measurements, 99)),
+                    'samples': len(measurements)
                 }
         return stats_dict
 
@@ -163,27 +171,56 @@ class BenchmarkHistory:
 
         run_id = str(uuid.uuid4())
 
-        # Create run metadata
+        # Process results once; the same processed data goes into the validated
+        # run record and the per-test index used for trend analysis.
+        processed_results = {
+            test_key: self._process_test_results(test_data, providers)
+            for test_key, test_data in results.items()
+        }
+
+        # Build the self-contained run record and refuse to save it unless it
+        # conforms to the published schema.
+        test_entries = []
+        for tid, func in tests.items():
+            entry = {"id": tid, "name": func.__name__}
+            slug = getattr(func, "meta", {}).get("slug")
+            if slug:
+                entry["slug"] = slug
+            test_entries.append(entry)
+
+        record = {
+            "schema_version": SCHEMA_VERSION,
+            "id": run_id,
+            "timestamp": timestamp,
+            "providers": providers,
+            "tests": test_entries,
+            "metadata": metadata or {},
+            "results": processed_results
+        }
+        validation_errors = validate_run_record(record)
+        if validation_errors:
+            raise ValueError(
+                "Benchmark run record failed schema validation: "
+                + "; ".join(validation_errors)
+            )
+
+        # Add run to history
         run_info = {
             "id": run_id,
             "timestamp": timestamp,
             "providers": providers,
-            "tests": [{"id": tid, "name": func.__name__} for tid, func in tests.items()],
-            "metadata": metadata or {}
+            "schema_version": SCHEMA_VERSION,
+            "record": record
         }
-
-        # Add run to history
         self.history["runs"].append(run_info)
 
-        # Process and store results
-        for test_key, test_data in results.items():
+        # Store run results for this test
+        for test_key, test_results in processed_results.items():
             if test_key not in self.history["test_results"]:
                 self.history["test_results"][test_key] = {}
-
-            # Store run results for this test
             self.history["test_results"][test_key][run_id] = {
                 "timestamp": timestamp,
-                "results": self._process_test_results(test_data, providers)
+                "results": test_results
             }
 
         # Save updated history
@@ -206,16 +243,18 @@ class BenchmarkHistory:
                             "stats": run_data[provider]['metrics'].get_statistics(),
                             "error": run_data[provider].get('error', None)
                         }
+                        if 'probe_errors' in run_data[provider]:
+                            processed[run_key][provider]["probe_errors"] = run_data[provider]["probe_errors"]
 
         return processed
 
-    def get_trend_data(self, test_id: int, provider: str, metric: str = "total_time",
+    def get_trend_data(self, test_id: Union[int, str], provider: str, metric: str = "total_time",
                       limit: int = 10) -> Dict:
         """
         Get trend data for a specific test, provider and metric
 
         Args:
-            test_id: ID of the test to analyze
+            test_id: Test id or slug (the key is f"test_{test_id}")
             provider: Name of the provider
             metric: Metric to track (total_time, or a specific phase like Workspace Creation)
             limit: Max number of most recent runs to include
@@ -259,9 +298,11 @@ class BenchmarkHistory:
                         if metric == "total_time":
                             value = provider_data.get("total_time")
                         else:
-                            # Extract specific phase metric
+                            # Extract specific phase metric; prefer median, fall
+                            # back to mean for records stored before percentiles
                             stats = provider_data.get("stats", {})
-                            value = stats.get(metric, {}).get("mean") if metric in stats else None
+                            stat = stats.get(metric, {})
+                            value = stat.get("median", stat.get("mean")) if stat else None
 
                     # Add data point
                     data_points.append({
@@ -298,14 +339,14 @@ class BenchmarkHistory:
 
         return trend_info
 
-    def get_provider_comparison(self, test_id: int,
+    def get_provider_comparison(self, test_id: Union[int, str],
                               providers: Optional[List[str]] = None,
                               runs: int = 5) -> Dict:
         """
         Compare providers' performance on a specific test
 
         Args:
-            test_id: ID of the test to analyze
+            test_id: Test id or slug (the key is f"test_{test_id}")
             providers: List of providers to compare (optional)
             runs: Number of most recent runs to include in analysis
 
@@ -370,9 +411,13 @@ class BenchmarkHistory:
             if provider_times:
                 avg = np.mean(provider_times)
                 stdev = np.std(provider_times)
+                median = float(np.median(provider_times))
+                p95 = float(np.percentile(provider_times, 95))
 
                 comparison["providers"][provider] = {
                     "avg_time": avg,
+                    "median_time": median,
+                    "p95_time": p95,
                     "stdev": stdev,
                     "cv": (stdev / avg) * 100 if avg > 0 else 0,  # coefficient of variation
                     "error_rate": (error_count / len(recent_runs)) * 100 if recent_runs else 0,
@@ -383,7 +428,7 @@ class BenchmarkHistory:
         if comparison["providers"]:
             comparison["fastest_provider"] = min(
                 comparison["providers"].items(),
-                key=lambda x: x[1]["avg_time"]
+                key=lambda x: x[1]["median_time"]
             )[0]
 
             comparison["most_consistent_provider"] = min(

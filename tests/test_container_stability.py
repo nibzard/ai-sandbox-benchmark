@@ -7,6 +7,14 @@ the sandbox environment performs under sustained load conditions.
 from tests.test_utils import create_test_config
 from tests.test_sandbox_utils import get_sandbox_utils
 
+TEST_META = {
+    "slug": "container_stability",
+    "description": "Test that evaluates container stability under various resource pressures.",
+    "single_run": True,
+    "info_test": False,
+}
+
+
 def test_container_stability():
     """
     Evaluates container stability under various resource pressures.
@@ -21,7 +29,6 @@ def test_container_stability():
     # Define test configuration
     config = create_test_config(
         env_vars=[],  # No env vars needed
-        single_run=True,  # Only need to run once per benchmark session
     )
     
     # Get the sandbox utilities code

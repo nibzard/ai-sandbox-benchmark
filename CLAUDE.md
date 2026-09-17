@@ -7,6 +7,9 @@
 - Run on local machine: `python comparator.py --providers local`
 - Adjust runs: `python comparator.py --runs 5 --warmup-runs 2`
 - Change region: `python comparator.py --target-region us`
+- Burst benchmark: `python burst.py --providers local --burst-size 10`
+- Unit tests: `python -m pytest unit_tests`
+- Export run records: `python export_results.py --out-dir results --limit 5`
 
 ## Testing Setup
 - Start CodeSandbox service first: `cd providers && node codesandbox-service.js`

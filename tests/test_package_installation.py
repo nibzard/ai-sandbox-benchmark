@@ -7,6 +7,14 @@ and imported in the sandbox environment.
 from tests.test_utils import create_test_config
 from tests.test_sandbox_utils import get_sandbox_utils
 
+TEST_META = {
+    "slug": "package_installation",
+    "description": "Test that measures the performance of Python package installation.",
+    "single_run": True,
+    "info_test": False,
+}
+
+
 def test_package_installation():
     """
     Measures the performance of Python package installation.
@@ -21,7 +29,6 @@ def test_package_installation():
     # Define test configuration
     config = create_test_config(
         env_vars=[],  # No env vars needed
-        single_run=True,  # Only need to run once per benchmark session
     )
     
     # Get the sandbox utilities code

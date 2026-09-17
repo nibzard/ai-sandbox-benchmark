@@ -7,6 +7,14 @@ environment by generating and executing Python code for a simple prime numbers t
 from tests.test_utils import create_test_config
 from tests.test_sandbox_utils import get_sandbox_utils
 
+TEST_META = {
+    "slug": "llm_generated_primes",
+    "description": "Test that generates code for prime number calculations using an LLM.",
+    "single_run": True,
+    "info_test": False,
+}
+
+
 def test_llm_generated_primes():
     """
     Generates code for prime number calculations using an LLM and executes it.
@@ -19,7 +27,6 @@ def test_llm_generated_primes():
     # Define test configuration
     config = create_test_config(
         env_vars=["OPENAI_API_KEY", "ANTHROPIC_API_KEY"],  # This test requires LLM API keys
-        single_run=True,  # Should only run once per benchmark session
     )
     
     # Get the sandbox utilities code
