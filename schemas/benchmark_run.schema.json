@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://github.com/nkkko/ai-sandbox-benchmark/schemas/benchmark_run.schema.json",
+  "$id": "https://github.com/nibzard/ai-sandbox-benchmark/schemas/benchmark_run.schema.json",
   "title": "Benchmark run record",
   "description": "Canonical record for one benchmark run. Each record is self-contained: metadata about the run plus per-test, per-run, per-provider timing statistics. Every record stored in the history file validates against this schema.",
   "type": "object",

@@ -2,11 +2,11 @@
 
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 [![Python Versions](https://img.shields.io/badge/python-3.12%2B-blue)](https://www.python.org/)
-[![GitHub stars](https://img.shields.io/github/stars/nkkko/ai-sandbox-benchmark.svg)](https://github.com/nkkko/ai-sandbox-benchmark/stargazers)
-[![GitHub forks](https://img.shields.io/github/forks/nkkko/ai-sandbox-benchmark.svg)](https://github.com/nkkko/ai-sandbox-benchmark/network)
-[![GitHub issues](https://img.shields.io/github/issues/nkkko/ai-sandbox-benchmark.svg)](https://github.com/nkkko/ai-sandbox-benchmark/issues)
+[![GitHub stars](https://img.shields.io/github/stars/nibzard/ai-sandbox-benchmark.svg)](https://github.com/nibzard/ai-sandbox-benchmark/stargazers)
+[![GitHub forks](https://img.shields.io/github/forks/nibzard/ai-sandbox-benchmark.svg)](https://github.com/nibzard/ai-sandbox-benchmark/network)
+[![GitHub issues](https://img.shields.io/github/issues/nibzard/ai-sandbox-benchmark.svg)](https://github.com/nibzard/ai-sandbox-benchmark/issues)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
-[![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://github.com/nkkko/ai-sandbox-benchmark/graphs/commit-activity)
+[![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://github.com/nibzard/ai-sandbox-benchmark/graphs/commit-activity)
 
 Welcome to **AI Sandbox Benchmark** – an open-source, standardized benchmarking framework designed to evaluate and compare various code execution sandbox environments like Daytona, e2b, CodeSandbox, Modal, Morph, Steel, and others.
 
@@ -22,7 +22,7 @@ Whether you're a developer looking to choose the best sandbox for your projects 
 
 ```bash
 # Clone the repository
-git clone https://github.com/nkkko/ai-sandbox-benchmark.git
+git clone https://github.com/nibzard/ai-sandbox-benchmark.git
 cd ai-sandbox-benchmark
 
 # Set up a virtual environment (recommended)
@@ -134,7 +134,7 @@ The benchmark suite now includes performance history tracking that:
 1. **Clone the Repository**
 
    ```bash
-   git clone https://github.com/nkkko/ai-sandbox-benchmark.git
+   git clone https://github.com/nibzard/ai-sandbox-benchmark.git
    cd ai-sandbox-benchmark
    ```
 
