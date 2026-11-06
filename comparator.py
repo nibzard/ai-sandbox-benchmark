@@ -80,7 +80,7 @@ for filename in sorted(os.listdir(TESTS_DIR)):
                 test_id += 1
 
 # Import providers from separate modules
-from providers import daytona, e2b, codesandbox, modal, local, morph, steel
+from providers import daytona, e2b, codesandbox, modal, local, morph, steel, briq
 
 # Map provider names to their corresponding execute() implementations.
 # Note: the daytona.execute() requires (code, executor, target_region).
@@ -91,7 +91,8 @@ provider_executors = {
     'modal': modal.execute,
     'local': local.execute,
     'morph': morph.execute,
-    'steel': steel.execute
+    'steel': steel.execute,
+    'briq': briq.execute
 }
 
 # Configure logging
@@ -197,6 +198,9 @@ class SandboxExecutor:
             },
             'steel': {
                 "STEEL_API_KEY": "Steel API key",
+            },
+            'briq': {
+                "BRIQ_API_KEY": "Briq API key",
             }
         }
 

@@ -4,6 +4,7 @@ aiosignal>=1.4.0
 annotated-types==0.7.0
 anyio==4.14.2
 attrs==24.3.0
+briq-cloud==0.1.1
 certifi==2024.12.14
 charset-normalizer==3.4.0
 click==8.1.8

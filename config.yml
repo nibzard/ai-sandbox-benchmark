@@ -40,3 +40,9 @@ providers:
     # STEEL_API_KEY - required API key
     # STEEL_VCPU / STEEL_MEMORY_MIB - optional machine size (default: 2 vCPU, 2048 MiB)
     # STEEL_EXEC_TIMEOUT_SECONDS - optional per-command timeout (default: 900)
+  briq:
+    # Briq specific configuration
+    # Briq sandboxes are configured via environment variables:
+    # BRIQ_API_KEY - required API key
+    # BRIQ_SIZE - optional sandbox size: small, medium, large or xlarge (default: small)
+    # BRIQ_EXEC_TIMEOUT_SECONDS - optional per-command timeout (default: 900)

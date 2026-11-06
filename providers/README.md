@@ -13,6 +13,7 @@ The benchmark currently supports the following execution environments:
 - **Local** - Local machine execution for baseline comparison (local.py)
 - **Morph** - Morph Cloud platform for secure AI code execution (morph.py)
 - **Steel** - Full Linux computers accessed through the Steel API (steel.py)
+- **Briq** - Sandboxes on microVMs accessed through the briq-cloud Python client (briq.py)
 
 ## Provider Setup Instructions
 
@@ -109,6 +110,37 @@ Note: the default Steel Debian image ships without Python. The provider installs
 `python3` and `pip` with `apt`, then the test packages with `pip`, as part of the
 measured setup time. Each test run creates a fresh computer and deletes it when
 done.
+
+### Briq
+
+Briq runs each test in a fresh sandbox on a microVM. The provider uses the
+[`briq-cloud`](https://pypi.org/project/briq-cloud/) Python client (installed by `requirements.txt`).
+
+1. Create an account at [briq.cloud](https://briq.cloud)
+2. Create an API key on the Agents page of the dashboard, https://app.briq.cloud
+3. Add to your `.env` file:
+   ```
+   BRIQ_API_KEY=your_briq_api_key
+
+   # Optional configuration (uncomment if needed)
+   # BRIQ_API_URL=https://api.briq.cloud      # Default API URL
+   # BRIQ_SIZE=small                          # small, medium, large or xlarge (default: small)
+   # BRIQ_IMAGE=                              # Another sandbox image (default: briq's sandbox image)
+   # BRIQ_CREATE_TIMEOUT_SECONDS=180          # Wait for the sandbox to run (default: 180)
+   # BRIQ_SETUP_TIMEOUT_SECONDS=600           # Package install timeout (default: 600)
+   # BRIQ_EXEC_TIMEOUT_SECONDS=900            # Per-command timeout (default: 900)
+   ```
+
+Notes:
+
+- The sandbox image is Ubuntu with Python. The provider installs `pip` if it is
+  missing, then the test packages, as part of the measured setup time. Each test
+  run creates a fresh sandbox and destroys it when done.
+- Your Briq plan decides which sizes you can use. A size outside the four above
+  fails before any request is made.
+- Environment variables from `pass_to_sandbox` are set on the test command only.
+  They are not stored in the sandbox's configuration.
+- Briq has no region choice, so `--target-region` has no effect for this provider.
 
 ## Provider Configuration
 

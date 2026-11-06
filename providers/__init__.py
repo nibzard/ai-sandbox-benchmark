@@ -11,3 +11,4 @@ import providers.codesandbox
 import providers.local
 import providers.morph
 import providers.steel
+import providers.briq
