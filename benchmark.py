@@ -115,7 +115,7 @@ class BenchmarkTUI:
         self.region = "eu"
 
         # Available providers and tests
-        self.providers = ["daytona", "e2b", "codesandbox", "modal", "local", "steel"]
+        self.providers = ["daytona", "e2b", "codesandbox", "modal", "local", "steel", "briq"]
         self.selected_providers = ["daytona"]  # Select all by default
         self.selected_tests = [1]  # Start with just the first test selected
 

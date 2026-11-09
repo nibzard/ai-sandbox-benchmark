@@ -8,7 +8,7 @@
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 [![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://github.com/nibzard/ai-sandbox-benchmark/graphs/commit-activity)
 
-Welcome to **AI Sandbox Benchmark** – an open-source, standardized benchmarking framework designed to evaluate and compare various code execution sandbox environments like Daytona, e2b, CodeSandbox, Modal, Morph, Steel, and others.
+Welcome to **AI Sandbox Benchmark** – an open-source, standardized benchmarking framework designed to evaluate and compare various code execution sandbox environments like Daytona, e2b, CodeSandbox, Modal, Morph, Steel, Briq, and others.
 
 > **⚠️ Disclaimer:** This project is a work in progress and proof of concept. We are actively working on optimizing performance, improving test coverage, and enhancing the overall user experience. Feedback and contributions are highly welcome!
 
@@ -390,6 +390,7 @@ ai-sandbox-benchmark
 │   ├── local.py      # Local execution provider
 │   ├── morph.py
 │   ├── steel.py
+│   ├── briq.py
 │   ├── utils.py      # Provider utilities
 │   ├── README.md     # Provider-specific documentation
 │   └── codesandbox-service.js
