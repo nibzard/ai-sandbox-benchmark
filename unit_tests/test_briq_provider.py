@@ -225,8 +225,13 @@ def test_create_failure_raises_and_closes_the_client(install_client):
     assert clients[0].closed
 
 
-def test_cleanup_failure_does_not_hide_the_result(install_client):
-    sandbox = FakeSandbox([result(), result("ok")], destroy_error=RuntimeError("gone"))
-    install_client(sandbox)
-    output, _ = run("print(1)")
+@pytest.mark.parametrize("destroy_error", [RuntimeError("gone"), briq_provider.BriqError("network", "gone")])
+def test_cleanup_failure_does_not_hide_the_result(install_client, destroy_error):
+    sandbox = FakeSandbox([result(), result("ok")], destroy_error=destroy_error)
+    clients = install_client(sandbox)
+    output, metrics = run("print(1)")
     assert output == "ok"
+    assert len(metrics.errors) == 1
+    assert "Cleanup failed: gone" in metrics.errors[0]
+    assert "sandbox bq_fake may still exist" in metrics.errors[0]
+    assert clients[0].closed

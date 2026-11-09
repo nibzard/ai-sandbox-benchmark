@@ -165,8 +165,10 @@ async def execute(code: str, env_vars: Optional[Dict[str, str]] = None) -> Tuple
                 await sandbox.destroy()
                 metrics.add_metric("Cleanup", time.time() - start)
             except BriqError as e:
+                metrics.add_error(f"Cleanup failed: {e} (sandbox {sandbox.id} may still exist)")
                 log_error(f"Cleanup error: {e} (sandbox {sandbox.id} may still exist)")
             except Exception as e:
+                metrics.add_error(f"Cleanup failed: {e} (sandbox {sandbox.id} may still exist)")
                 log_error(f"Cleanup error: {e}")
         if client is not None:
             try:
